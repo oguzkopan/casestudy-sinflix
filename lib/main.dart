@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sin_flix/app/app_bloc_observer.dart';
+import 'package:sin_flix/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:sin_flix/app/app_widget.dart';
 import 'package:sin_flix/core/di/injector.dart';
 import 'package:sin_flix/firebase_options.dart';
@@ -39,6 +41,13 @@ Future<void> main() async {
   Bloc.observer = AppBlocObserver(logger: logger);
   logger.i("Main: Bloc.observer set.");
 
-  runApp(const AppWidget());
+  final authRepository = getIt<AuthRepository>();
+
+  runApp(
+    BlocProvider(
+      create: (context) => AuthBloc(authRepository)..add(CheckAuthStatus()),
+      child: const AppWidget(),
+    ),
+  );
   logger.i("Main: runApp executed.");
 }
