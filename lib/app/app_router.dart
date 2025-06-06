@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:sin_flix/features/auth/presentation/pages/login_page.dart';
 import 'package:sin_flix/features/auth/presentation/pages/profile_photo_add_page.dart';
