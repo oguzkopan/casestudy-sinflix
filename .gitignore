@@ -1,0 +1,86 @@
+# Miscellaneous
+*.class
+*.lock
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ and Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+**/local.properties
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Flutter/Dart/Pub related
+.metadata
+.packages
+**/doc/api/
+**/ios/Flutter/.last_build_id
+**/android/key.properties
+*.jks
+*.keystore
+**/ios/Flutter/flutter_export_environment.sh
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Build artifacts
+build/
+/android/app/build/
+/ios/build/
+/macos/build/
+/linux/build/
+/windows/build/
+
+# Symbolication related
+app.*.symbols
+*.dSYM/
+
+# Obfuscation related
+app.*.map.json
+
+# iOS specific
+DerivedData/
+*.xcscheme
+xcuserdata/
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/engine.framework
+
+# macOS specific
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# Windows specific
+**/windows/flutter/ephemeral/
+**/windows/runner/Debug/
+**/windows/runner/Profile/
+**/windows/runner/Release/
+
+# Linux specific
+**/linux/flutter/ephemeral/
+
+# Files that SHOULD typically be committed:
+!lib/core/di/injector.config.dart
+!lib/firebase_options.dart
+# If you want to commit Podfile.lock for iOS & macOS (recommended for consistency)
+# !**/ios/Podfile.lock
+# !**/macos/Podfile.lock
