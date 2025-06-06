@@ -71,8 +71,6 @@ flutter:
   assets:
     - assets/logo/
     - assets/images/
-    - assets/lottie/
-    - assets/lang/
 
   # fonts:
   #   - family: YourFont

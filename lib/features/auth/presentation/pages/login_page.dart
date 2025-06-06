@@ -18,7 +18,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscureText = true;
 
@@ -29,11 +29,8 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscureText = !_obscureText;
-    });
-  }
+  void _togglePasswordVisibility() =>
+      setState(() => _obscureText = !_obscureText);
 
   void _login() {
     if (_formKey.currentState!.validate()) {
@@ -46,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final textTheme   = Theme.of(context).textTheme;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -62,73 +59,96 @@ class _LoginPageState extends State<LoginPage> {
         },
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  SizedBox(height: screenHeight * 0.05),
+                children: [
+                  SizedBox(height: screenHeight * .05),
                   Image.asset(AppAssets.appLogo, height: 50),
-                  SizedBox(height: screenHeight * 0.05),
-                  Text(
-                    'Merhabalar',
-                    textAlign: TextAlign.center,
-                    style: textTheme.headlineSmall,
-                  ),
+                  SizedBox(height: screenHeight * .05),
+
+                  // Headline + sub-text
+                  Text('Merhabalar',
+                      textAlign: TextAlign.center,
+                      style: textTheme.headlineSmall),
                   const SizedBox(height: 8),
                   Text(
-                    'Tempus varius ei vitae interdum id elementum tristique sedfend elt.',
+                    'Tempus varius ei vitae interdum id elementum tristique sed fend elt.',
                     textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium?.copyWith(color: AppColors.lightGrey),
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.lightGrey),
                   ),
-                  SizedBox(height: screenHeight * 0.04),
+                  SizedBox(height: screenHeight * .04),
+
+                  // Email
                   CustomTextField(
                     controller: _emailController,
                     hintText: 'E-Posta',
-                    prefixIcon: const Icon(Icons.email_outlined),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'E-posta boş olamaz';
-                      if (!value.contains('@') || !value.contains('.')) return 'Geçerli bir e-posta girin';
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'E-posta boş olamaz';
+                      if (!v.contains('@') || !v.contains('.')) {
+                        return 'Geçerli bir e-posta girin';
+                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
+
+                  // Password
                   CustomTextField(
                     controller: _passwordController,
                     hintText: 'Şifre',
                     obscureText: _obscureText,
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                      icon: Icon(
+                        _obscureText
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
                       onPressed: _togglePasswordVisibility,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Şifre boş olamaz';
-                      if (value.length < 6) return 'Şifre en az 6 karakter olmalı';
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Şifre boş olamaz';
+                      if (v.length < 6) return 'Şifre en az 6 karakter olmalı';
                       return null;
                     },
                   ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {}, // TODO: forgot-password flow
                       child: const Text('Şifremi Unuttum'),
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Login button
                   BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return CustomButton(
-                        text: 'Giriş Yap',
-                        onPressed: _login,
-                        isLoading: state is AuthLoading,
-                      );
-                    },
+                    builder: (_, state) => CustomButton(
+                      text: 'Giriş Yap',
+                      isLoading: state is AuthLoading,
+                      onPressed: _login,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  _buildSocialLoginButtons(context),
+
+                  // Social buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _SocialIcon(AppAssets.googleIcon, onTap: () {}),
+                      const SizedBox(width: 20),
+                      _SocialIcon(AppAssets.appleIcon,  onTap: () {}),
+                      const SizedBox(width: 20),
+                      _SocialIcon(AppAssets.facebookIcon, onTap: () {}),
+                    ],
+                  ),
+
                   const SizedBox(height: 32),
                   _buildRegisterPrompt(context),
                 ],
@@ -140,47 +160,42 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildSocialLoginButtons(BuildContext context) {
-    Widget socialButton(String assetPath, VoidCallback onPressed) {
-      return InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
-            shape: BoxShape.circle,
-          ),
-          child: Image.asset(assetPath, height: 24, width: 24, color: AppColors.lightGrey),
+  /// Rounded-square 56×56 icon
+  Widget _SocialIcon(String asset, {required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 56,
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(8),
         ),
-      );
-    }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        socialButton(AppAssets.googleIcon, () {}),
-        const SizedBox(width: 20),
-        socialButton(AppAssets.facebookIcon, () {}),
-        const SizedBox(width: 20),
-        socialButton(AppAssets.appleIcon, () {}),
-      ],
+        child: Image.asset(asset, width: 24, height: 24),
+      ),
     );
   }
 
   Widget _buildRegisterPrompt(BuildContext context) {
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          text: 'Bir hesabın yok mu? ',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.lightGrey),
-          children: <TextSpan>[
-            TextSpan(
-              text: 'Kayıt Ol',
-              style: const TextStyle(color: AppColors.primaryRed, fontWeight: FontWeight.bold),
-              recognizer: TapGestureRecognizer()..onTap = () => context.push(AppRouter.registerPath),
-            ),
-          ],
-        ),
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: AppColors.lightGrey),
+        text: 'Bir hesabın yok mu? ',
+        children: [
+          TextSpan(
+            text: 'Kayıt Ol',
+            style: const TextStyle(
+                color: AppColors.primaryRed, fontWeight: FontWeight.bold),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => context.push(AppRouter.registerPath),
+          ),
+        ],
       ),
     );
   }
