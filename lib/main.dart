@@ -11,6 +11,11 @@ import 'package:sin_flix/core/di/injector.dart';
 import 'package:sin_flix/firebase_options.dart';
 
 import 'core/services/logger_service.dart';
+import 'features/auth/domain/usecases/check_auth_status.dart';
+import 'features/auth/domain/usecases/login.dart' as auth_login;
+import 'features/auth/domain/usecases/logout.dart' as auth_logout;
+import 'features/auth/domain/usecases/register.dart' as auth_register;
+import 'features/auth/domain/usecases/upload_profile_photo_usecase.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,11 +46,18 @@ Future<void> main() async {
   Bloc.observer = AppBlocObserver(logger: logger);
   logger.i("Main: Bloc.observer set.");
 
-  final authRepository = getIt<AuthRepository>();
+  // final authRepository = getIt<AuthRepository>(); // No longer needed directly here
 
   runApp(
     BlocProvider(
-      create: (context) => AuthBloc(authRepository)..add(CheckAuthStatus()),
+      create: (context) => AuthBloc(
+        getIt<auth_login.Login>(),
+        getIt<auth_register.Register>(),
+        getIt<CheckAuthStatus>(),
+        getIt<auth_logout.Logout>(),
+        getIt<UploadProfilePhotoUsecase>(),
+        getIt<LoggerService>(),
+      )..add(AuthStatusChecked()), // Correctly dispatch AuthStatusChecked event
       child: const AppWidget(),
     ),
   );
