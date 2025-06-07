@@ -64,7 +64,7 @@ _i174.GetIt $initGetIt(
       () => _i597.Logout(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i1030.UploadProfilePhotoUsecase>(
       () => _i1030.UploadProfilePhotoUsecase(gh<_i787.AuthRepository>()));
-  gh.singleton<_i797.AuthBloc>(() => _i797.AuthBloc(
+  gh.lazySingleton<_i797.AuthBloc>(() => _i797.AuthBloc(
         gh<_i428.Login>(),
         gh<_i480.Register>(),
         gh<_i643.CheckAuthStatus>(),

@@ -1,169 +1,130 @@
 import 'dart:io';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:sin_flix/core/services/logger_service.dart'; // Import LoggerService
+
+import 'package:sin_flix/core/services/logger_service.dart';
 import 'package:sin_flix/core/usecases/usecase.dart';
 import 'package:sin_flix/features/auth/domain/entities/user.dart';
 import 'package:sin_flix/features/auth/domain/usecases/check_auth_status.dart';
 import 'package:sin_flix/features/auth/domain/usecases/login.dart' as auth_login;
-import 'package:sin_flix/features/auth/domain/usecases/logout.dart' as auth_logout;
-import 'package:sin_flix/features/auth/domain/usecases/register.dart' as auth_register;
+import 'package:sin_flix/features/auth/domain/usecases/logout.dart'
+as auth_logout;
+import 'package:sin_flix/features/auth/domain/usecases/register.dart'
+as auth_register;
 import 'package:sin_flix/features/auth/domain/usecases/upload_profile_photo_usecase.dart';
-
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
-@singleton
+@lazySingleton
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final auth_login.Login _loginUseCase;
-  final auth_register.Register _registerUseCase;
-  final CheckAuthStatus _checkAuthStatusUseCase;
-  final auth_logout.Logout _logoutUseCase;
-  final UploadProfilePhotoUsecase _uploadProfilePhotoUsecase;
-  final LoggerService _logger; // Declare the logger instance variable
+  final auth_login.Login _login;
+  final auth_register.Register _register;
+  final CheckAuthStatus _check;
+  final auth_logout.Logout _logout;
+  final UploadProfilePhotoUsecase _uploadPhoto;
+  final LoggerService _log;
 
   AuthBloc(
-      this._loginUseCase,
-      this._registerUseCase,
-      this._checkAuthStatusUseCase,
-      this._logoutUseCase,
-      this._uploadProfilePhotoUsecase,
-      this._logger, // Inject LoggerService through the constructor
+      this._login,
+      this._register,
+      this._check,
+      this._logout,
+      this._uploadPhoto,
+      this._log,
       ) : super(AuthInitial()) {
-    on<AuthStatusChecked>(_onAuthStatusChecked);
-    on<AuthLoginRequested>(_onLoginRequested);
-    on<AuthRegisterRequested>(_onRegisterRequested);
-    on<AuthLogoutRequested>(_onLogoutRequested);
-    on<AuthPhotoUploadRequested>(_onPhotoUploadRequested);
-    on<AuthPhotoUploadSkipped>(_onPhotoUploadSkipped);
-    on<AuthUserUpdated>(_onAuthUserUpdated);
+    on<AuthStatusChecked>(_onCheck);
+    on<AuthLoginRequested>(_onLogin);
+    on<AuthRegisterRequested>(_onRegister);
+    on<AuthPhotoUploadRequested>(_onUploadPhoto);
+    on<AuthPhotoUploadSkipped>(_onSkipPhoto);
+    on<AuthLogoutRequested>(_onLogout);
+    on<AuthUserUpdated>((e, emit) => emit(AuthAuthenticated(user: e.user)));
   }
 
-  Future<void> _onAuthStatusChecked(AuthStatusChecked event, Emitter<AuthState> emit) async {
-    _logger.i("AuthBloc (${this.hashCode}): _onAuthStatusChecked event RECEIVED."); // Add hashCode
+  /* ------------------------------------------------------------------ */
+  Future<void> _onCheck(
+      AuthStatusChecked e, Emitter<AuthState> emit) async {
+    _log.i('AuthBloc: checking status');
     emit(AuthLoading());
-    _logger.i("AuthBloc: Emitted AuthLoading.");
-    final failureOrUser = await _checkAuthStatusUseCase(NoParams());
-    failureOrUser.fold(
-          (failure) {
-        _logger.i("AuthBloc: CheckAuthStatus failed: ${failure.message}. Emitting AuthUnauthenticated.");
-        emit(AuthUnauthenticated());
+    final res = await _check(NoParams());
+    res.fold(
+          (f) => emit(AuthUnauthenticated()),
+          (u) => emit(u == null ? AuthUnauthenticated() : AuthAuthenticated(user: u)),
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  Future<void> _onLogin(
+      AuthLoginRequested e, Emitter<AuthState> emit) async {
+    _log.i('AuthBloc: login ${e.email}');
+    emit(AuthLoading());
+    final res =
+    await _login(auth_login.LoginParams(email: e.email, password: e.password));
+    res.fold(
+          (f) => emit(AuthFailure(message: f.message)),
+          (u) => emit(u.photoUrl == null || u.photoUrl!.isEmpty
+          ? AuthNeedsPhotoUpload(user: u)
+          : AuthAuthenticated(user: u)),
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  Future<void> _onRegister(
+      AuthRegisterRequested e, Emitter<AuthState> emit) async {
+    _log.i('AuthBloc: register ${e.email}');
+    emit(AuthLoading());
+    final res = await _register(auth_register.RegisterParams(
+        name: e.name,
+        email: e.email,
+        password: e.password,
+        birthDate: e.birthDate));
+    res.fold(
+          (f) => emit(AuthFailure(message: f.message)),
+          (u) => emit(AuthNeedsPhotoUpload(user: u)),
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  Future<void> _onUploadPhoto(
+      AuthPhotoUploadRequested e, Emitter<AuthState> emit) async {
+    final current = state;
+    if (current is! AuthNeedsPhotoUpload && current is! AuthAuthenticated) {
+      _log.w('UploadPhoto in wrong state ${current.runtimeType}');
+      return;
+    }
+    final user = current is AuthNeedsPhotoUpload
+        ? current.user
+        : (current as AuthAuthenticated).user;
+
+    emit(AuthLoading());
+    final res = await _uploadPhoto(UploadProfilePhotoParams(imageFile: e.imageFile));
+    res.fold(
+      /* ❌ upload failed → stay on add-photo */
+          (f) {
+        _log.e('upload failed: ${f.message}');
+        emit(AuthNeedsPhotoUpload(user: user));
       },
-          (user) {
-        if (user != null) {
-          _logger.i("AuthBloc: User found (ID: ${user.id}). Emitting AuthAuthenticated.");
-          emit(AuthAuthenticated(user: user));
-        } else {
-          _logger.i("AuthBloc: No user found. Emitting AuthUnauthenticated.");
-          emit(AuthUnauthenticated());
-        }
-      },
+      /* ✅ upload ok → home */
+          (u) => emit(AuthAuthenticated(user: u)),
     );
   }
 
-  Future<void> _onLoginRequested(AuthLoginRequested event, Emitter<AuthState> emit) async {
-    _logger.i("AuthBloc: Login requested for email: ${event.email}");
-    emit(AuthLoading());
-    final failureOrUser = await _loginUseCase(auth_login.LoginParams(email: event.email, password: event.password));
-    failureOrUser.fold(
-            (failure) {
-          _logger.e("AuthBloc: Login failed: ${failure.message}");
-          emit(AuthFailure(message: failure.message));
-        },
-            (user) {
-          _logger.i("AuthBloc: Login successful for user (ID: ${user.id}). Emitting AuthAuthenticated.");
-          emit(AuthAuthenticated(user: user));
-        }
-    );
-  }
-
-  Future<void> _onRegisterRequested(AuthRegisterRequested event, Emitter<AuthState> emit) async {
-    _logger.i("AuthBloc: Register requested for email: ${event.email}");
-    emit(AuthLoading());
-    final failureOrUser = await _registerUseCase(auth_register.RegisterParams(
-      name: event.name,
-      email: event.email,
-      password: event.password,
-      birthDate: event.birthDate,
-    ));
-    failureOrUser.fold(
-            (failure) {
-          _logger.e("AuthBloc: Registration failed: ${failure.message}");
-          emit(AuthFailure(message: failure.message));
-        },
-            (user) {
-          _logger.i("AuthBloc: Registration successful for user (ID: ${user.id}). Emitting AuthNeedsPhotoUpload.");
-          emit(AuthNeedsPhotoUpload(user: user));
-        }
-    );
-  }
-
-  Future<void> _onPhotoUploadRequested(AuthPhotoUploadRequested event, Emitter<AuthState> emit) async {
-    _logger.i("AuthBloc: Photo upload requested.");
-    final currentState = state;
-    if (currentState is AuthNeedsPhotoUpload || currentState is AuthAuthenticated) {
-      User? currentUser;
-      if (currentState is AuthNeedsPhotoUpload) currentUser = currentState.user;
-      if (currentState is AuthAuthenticated) currentUser = currentState.user;
-
-      if (currentUser == null) {
-        _logger.e("AuthBloc: User context not found for photo upload.");
-        emit(const AuthFailure(message: "User context not found for photo upload."));
-        return;
-      }
-
-      emit(AuthLoading());
-      _logger.i("AuthBloc: Uploading photo...");
-      final failureOrUser = await _uploadProfilePhotoUsecase(UploadProfilePhotoParams(imageFile: event.imageFile));
-      failureOrUser.fold(
-              (failure) {
-            _logger.e("AuthBloc: Photo upload failed: ${failure.message}");
-            emit(AuthFailure(message: failure.message));
-          },
-              (updatedUser) {
-            _logger.i("AuthBloc: Photo upload successful for user (ID: ${updatedUser.id}). Emitting AuthAuthenticated.");
-            emit(AuthAuthenticated(user: updatedUser));
-          }
-      );
-    } else {
-      _logger.e("AuthBloc: Invalid state for photo upload. Current state: ${currentState.runtimeType}");
-      emit(const AuthFailure(message: "Invalid state for photo upload."));
+  /* ------------------------------------------------------------------ */
+  void _onSkipPhoto(
+      AuthPhotoUploadSkipped e, Emitter<AuthState> emit) {
+    final current = state;
+    if (current is AuthNeedsPhotoUpload) {
+      emit(AuthAuthenticated(user: current.user));
     }
   }
 
-  void _onPhotoUploadSkipped(AuthPhotoUploadSkipped event, Emitter<AuthState> emit) {
-    _logger.i("AuthBloc: Photo upload skipped.");
-    if (state is AuthNeedsPhotoUpload) {
-      final user = (state as AuthNeedsPhotoUpload).user;
-      _logger.i("AuthBloc: Skipping photo upload for user (ID: ${user.id}). Emitting AuthAuthenticated.");
-      emit(AuthAuthenticated(user: user));
-    } else {
-      _logger.w("AuthBloc: PhotoUploadSkipped called from unexpected state: ${state.runtimeType}. Re-checking auth status.");
-      add(AuthStatusChecked());
-    }
-  }
-
-  Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<AuthState> emit) async {
-    _logger.i("AuthBloc: Logout requested.");
+  /* ------------------------------------------------------------------ */
+  Future<void> _onLogout(
+      AuthLogoutRequested e, Emitter<AuthState> emit) async {
     emit(AuthLoading());
-    final failureOrVoid = await _logoutUseCase(NoParams());
-    failureOrVoid.fold(
-            (failure) {
-          _logger.e("AuthBloc: Logout failed: ${failure.message}");
-          // Still emit Unauthenticated, but log the error
-          emit(AuthUnauthenticated());
-        },
-            (_) {
-          _logger.i("AuthBloc: Logout successful. Emitting AuthUnauthenticated.");
-          emit(AuthUnauthenticated());
-        }
-    );
-  }
-
-  void _onAuthUserUpdated(AuthUserUpdated event, Emitter<AuthState> emit) {
-    _logger.i("AuthBloc: User updated event received for user (ID: ${event.user.id}). Emitting AuthAuthenticated.");
-    emit(AuthAuthenticated(user: event.user));
+    await _logout(NoParams());
+    emit(AuthUnauthenticated());
   }
 }

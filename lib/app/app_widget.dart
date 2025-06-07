@@ -12,16 +12,11 @@ class AppWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logger = getIt<LoggerService>();
-    logger.i("AppWidget: build() called.");
-    return BlocProvider(
-      create: (_) => getIt<AuthBloc>(),
-      child: MaterialApp.router(
-        title: 'SinFlix',
-        theme: AppTheme.darkTheme,
-        debugShowCheckedModeBanner: false,
-        routerConfig: AppRouter.router,
-      ),
+    return MaterialApp.router(
+      title: 'SinFlix',
+      theme: AppTheme.darkTheme,
+      debugShowCheckedModeBanner: false,
+      routerConfig: AppRouter.router,
     );
   }
 }

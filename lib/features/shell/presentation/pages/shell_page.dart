@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sin_flix/app/app_router.dart';
-import 'package:sin_flix/core/di/injector.dart';
 
+import 'package:sin_flix/app/app_router.dart';
 import 'package:sin_flix/features/shell/presentation/cubit/shell_cubit.dart';
 
 class ShellPage extends StatelessWidget {
-  final Widget child;
   const ShellPage({super.key, required this.child});
+  final Widget child;
 
-  static final List<String> _pageKeys = [
+  static const _paths = [
     AppRouter.homePath,
     AppRouter.profilePath,
   ];
@@ -18,16 +17,17 @@ class ShellPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<ShellCubit>(),
+      // ⬇️ build the cubit inline – no GetIt lookup needed
+      create: (_) => ShellCubit(),
       child: Scaffold(
         body: child,
         bottomNavigationBar: BlocBuilder<ShellCubit, int>(
-          builder: (context, currentIndex) {
+          builder: (context, _) {
             return BottomNavigationBar(
-              currentIndex: _calculateSelectedIndex(context),
-              onTap: (index) {
-                context.read<ShellCubit>().changeTab(index);
-                context.go('${AppRouter.shellPath}${_pageKeys[index]}');
+              currentIndex: _selected(context),
+              onTap: (i) {
+                context.read<ShellCubit>().changeTab(i);
+                context.go(_paths[i]);         // '/home' or '/profile'
               },
               items: const [
                 BottomNavigationBarItem(
@@ -48,15 +48,12 @@ class ShellPage extends StatelessWidget {
     );
   }
 
-  int _calculateSelectedIndex(BuildContext context) {
-    final GoRouter route = GoRouter.of(context);
-    final String location = route.routerDelegate.currentConfiguration.uri.toString();
-    if (location.startsWith(AppRouter.shellPath + AppRouter.homePath)) {
-      return 0;
-    }
-    if (location.startsWith(AppRouter.shellPath + AppRouter.profilePath)) {
-      return 1;
-    }
-    return 0;
+  int _selected(BuildContext context) {
+    final loc = GoRouter.of(context)
+        .routerDelegate
+        .currentConfiguration
+        .uri
+        .toString();
+    return loc.startsWith(AppRouter.profilePath) ? 1 : 0;
   }
 }

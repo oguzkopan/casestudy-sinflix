@@ -113,9 +113,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> uploadProfilePhoto(File file) async {
     final uid = _auth.currentUser!.uid;
-    final ref = _storage.ref('profile_photos/$uid.jpg');
-    await ref.putFile(file);
+    final ref = _storage.ref().child('profile_photos/$uid.jpg');
+
+    // 🔸 wait until the upload *really* finishes
+    await ref.putFile(file).whenComplete(() {});
+
     final url = await ref.getDownloadURL();
+
     await _auth.currentUser!.updatePhotoURL(url);
     return _mapFbUser(_auth.currentUser!);
   }
