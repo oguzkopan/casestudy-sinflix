@@ -9,6 +9,8 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:firebase_auth/firebase_auth.dart' as _i59;
+import 'package:firebase_storage/firebase_storage.dart' as _i457;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -27,6 +29,7 @@ import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
 import '../api/api_client.dart' as _i277;
 import '../services/logger_service.dart' as _i141;
 import '../services/storage_service.dart' as _i306;
+import 'firebase_module.dart' as _i616;
 
 // initializes the registration of main-scope dependencies inside of GetIt
 _i174.GetIt $initGetIt(
@@ -39,17 +42,19 @@ _i174.GetIt $initGetIt(
     environment,
     environmentFilter,
   );
+  final firebaseModule = _$FirebaseModule();
+  gh.lazySingleton<_i59.FirebaseAuth>(() => firebaseModule.firebaseAuth);
+  gh.lazySingleton<_i457.FirebaseStorage>(() => firebaseModule.firebaseStorage);
   gh.lazySingleton<_i277.ApiClient>(() => _i277.ApiClient());
+  gh.lazySingleton<_i107.AuthRemoteDataSource>(
+      () => _i107.AuthRemoteDataSourceImpl(
+            gh<_i59.FirebaseAuth>(),
+            gh<_i457.FirebaseStorage>(),
+          ));
   gh.lazySingleton<_i141.LoggerService>(() => _i141.LoggerServiceImpl());
   gh.lazySingleton<_i306.StorageService>(() => _i306.SecureStorageService());
-  gh.lazySingleton<_i107.AuthRemoteDataSource>(
-      () => _i107.AuthRemoteDataSourceImpl(gh<_i277.ApiClient>()));
-  gh.lazySingleton<_i787.AuthRepository>(() => _i132.AuthRepositoryImpl(
-        gh<_i107.AuthRemoteDataSource>(),
-        gh<_i306.StorageService>(),
-      ));
-  gh.lazySingleton<_i1030.UploadProfilePhotoUsecase>(
-      () => _i1030.UploadProfilePhotoUsecase(gh<_i787.AuthRepository>()));
+  gh.lazySingleton<_i787.AuthRepository>(
+      () => _i132.AuthRepositoryImpl(gh<_i107.AuthRemoteDataSource>()));
   gh.lazySingleton<_i428.Login>(() => _i428.Login(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i480.Register>(
       () => _i480.Register(gh<_i787.AuthRepository>()));
@@ -57,6 +62,8 @@ _i174.GetIt $initGetIt(
       () => _i643.CheckAuthStatus(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i597.Logout>(
       () => _i597.Logout(gh<_i787.AuthRepository>()));
+  gh.lazySingleton<_i1030.UploadProfilePhotoUsecase>(
+      () => _i1030.UploadProfilePhotoUsecase(gh<_i787.AuthRepository>()));
   gh.singleton<_i797.AuthBloc>(() => _i797.AuthBloc(
         gh<_i428.Login>(),
         gh<_i480.Register>(),
@@ -67,3 +74,5 @@ _i174.GetIt $initGetIt(
       ));
   return getIt;
 }
+
+class _$FirebaseModule extends _i616.FirebaseModule {}

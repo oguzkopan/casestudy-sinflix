@@ -19,47 +19,27 @@ import 'features/auth/domain/usecases/upload_profile_photo_usecase.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Direct instantiation for early logging
-  final earlyLogger = LoggerServiceImpl();
-  earlyLogger.i("Main: App starting...");
 
+  // 1️⃣  Initialise Firebase *before* DI needs it
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // 2️⃣  Now the singletons that ask for FirebaseAuth can be created safely
   await configureDependencies();
-  final logger = getIt<LoggerService>(); // Now use the injected one
-  logger.i("Main: configureDependencies complete.");
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    logger.i("Main: Firebase.initializeApp complete.");
-  } catch (e, s) {
-    logger.e("Main: Firebase.initializeApp FAILED", error: e, stackTrace: s);
-  }
+  final logger = getIt<LoggerService>()..i('Dependencies ready');
 
+  // Crashlytics / analytics toggles
   if (kDebugMode) {
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
-  } else {
-    // ... release Crashlytics setup ...
   }
-  logger.i("Main: Crashlytics setup complete.");
 
-  Bloc.observer = AppBlocObserver(logger: logger);
-  logger.i("Main: Bloc.observer set.");
-
-  // final authRepository = getIt<AuthRepository>(); // No longer needed directly here
-
+  // 3️⃣  Use the AuthBloc instance provided by get_it
   runApp(
-    BlocProvider(
-      create: (context) => AuthBloc(
-        getIt<auth_login.Login>(),
-        getIt<auth_register.Register>(),
-        getIt<CheckAuthStatus>(),
-        getIt<auth_logout.Logout>(),
-        getIt<UploadProfilePhotoUsecase>(),
-        getIt<LoggerService>(),
-      )..add(AuthStatusChecked()), // Correctly dispatch AuthStatusChecked event
+    BlocProvider.value(
+      value: getIt<AuthBloc>()..add(AuthStatusChecked()),
       child: const AppWidget(),
     ),
   );
-  logger.i("Main: runApp executed.");
 }

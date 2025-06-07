@@ -1,106 +1,122 @@
-import 'package:dio/dio.dart';
+// ignore_for_file: depend_on_referenced_packages
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:injectable/injectable.dart';
-import 'package:sin_flix/core/api/api_client.dart';
-import 'package:sin_flix/core/api/api_constants.dart';
 import 'package:sin_flix/core/error/exceptions.dart';
-import 'package:sin_flix/features/auth/data/models/login_request.dart';
-import 'package:sin_flix/features/auth/data/models/login_response.dart';
-import 'package:sin_flix/features/auth/data/models/register_request.dart';
 import 'package:sin_flix/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<LoginResponse> login(LoginRequest request);
-  Future<UserModel> register(RegisterRequest request);
-  Future<UserModel> getProfile();
-  Future<UserModel> uploadProfilePhoto(String filePath);
+  /* e-mail / şifre */
+  Future<UserModel> loginWithEmail(String email, String password);
+  Future<UserModel> registerWithEmail(
+      String name, String email, String password, String birthDate);
+
+  /* current user / logout */
+  Future<UserModel?> currentUser();
+  Future<void> logout();
+
+  /* social providers */
+  Future<UserModel> signInWithGoogle();
+  Future<UserModel> signInWithApple();
+  Future<UserModel> signInWithFacebook();
+
+  /* avatar upload */
+  Future<UserModel> uploadProfilePhoto(File file);
 }
 
 @LazySingleton(as: AuthRemoteDataSource)
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final ApiClient _apiClient;
+  final fb.FirebaseAuth  _auth;
+  final FirebaseStorage  _storage;
+  AuthRemoteDataSourceImpl(this._auth, this._storage);
 
-  AuthRemoteDataSourceImpl(this._apiClient);
+  /* helpers -------------------------------------------------------------- */
+  UserModel _mapFbUser(fb.User u) => UserModel(
+    id: u.uid,
+    name: u.displayName ?? '',
+    email: u.email ?? '',
+    photoUrl: u.photoURL,
+  );
 
+  /* e-mail / şifre ------------------------------------------------------- */
   @override
-  Future<LoginResponse> login(LoginRequest request) async {
+  Future<UserModel> loginWithEmail(String e, String p) async {
     try {
-      final response = await _apiClient.dio.post(
-        ApiConstants.login,
-        data: request.toJson(),
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        return LoginResponse.fromJson(response.data);
-      } else {
-        throw ServerException(message: response.data?['message'] ?? 'Login failed');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
-        throw ServerException(message: e.response?.data?['message'] ?? 'Invalid credentials');
-      }
-      throw ServerException(message: e.message ?? 'Network error during login');
+      final cred = await _auth.signInWithEmailAndPassword(email: e, password: p);
+      return _mapFbUser(cred.user!);
+    } on fb.FirebaseAuthException catch (e) {
+      throw ServerException(message: e.message ?? 'Firebase login failed');
     }
   }
 
   @override
-  Future<UserModel> register(RegisterRequest request) async {
+  Future<UserModel> registerWithEmail(
+      String n, String e, String p, String birth) async {
     try {
-      final response = await _apiClient.dio.post(
-        ApiConstants.register,
-        data: request.toJson(),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (response.data != null && response.data['user'] != null) {
-          return UserModel.fromJson(response.data['user']);
-        } else if (response.data != null) {
-          return UserModel.fromJson(response.data);
-        }
-        throw ServerException(message: 'Registration successful but no user data returned.');
-      } else {
-        throw ServerException(message: response.data?['message'] ?? 'Registration failed');
-      }
-    } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Network error during registration');
+      final cred =
+      await _auth.createUserWithEmailAndPassword(email: e, password: p);
+      await cred.user!.updateDisplayName(n);
+      return _mapFbUser(cred.user!);
+    } on fb.FirebaseAuthException catch (e) {
+      throw ServerException(message: e.message ?? 'Firebase register failed');
     }
   }
 
+  /* current user / logout ----------------------------------------------- */
   @override
-  Future<UserModel> getProfile() async {
-    try {
-      final response = await _apiClient.dio.get(ApiConstants.profile);
-      if (response.statusCode == 200 && response.data != null) {
-        return UserModel.fromJson(response.data);
-      } else if (response.statusCode == 401) {
-        throw UnauthenticatedException(message: 'Unauthorized');
-      } else {
-        throw ServerException(message: response.data?['message'] ?? 'Failed to fetch profile');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw UnauthenticatedException(message: 'Unauthorized');
-      }
-      throw ServerException(message: e.message ?? 'Network error fetching profile');
-    }
+  Future<UserModel?> currentUser() async =>
+      _auth.currentUser == null ? null : _mapFbUser(_auth.currentUser!);
+
+  @override
+  Future<void> logout() => _auth.signOut();
+
+  /* social sign-ins ------------------------------------------------------ */
+  @override
+  Future<UserModel> signInWithGoogle() async {
+    final googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) throw ServerException(message: 'Google aborted');
+    final googleAuth = await googleUser.authentication;
+    final cred = fb.GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken, accessToken: googleAuth.accessToken);
+    final userCred = await _auth.signInWithCredential(cred);
+    return _mapFbUser(userCred.user!);
   }
+
   @override
-  Future<UserModel> uploadProfilePhoto(String filePath) async {
-    try {
-      String fileName = filePath.split('/').last;
-      FormData formData = FormData.fromMap({
-        "photo": await MultipartFile.fromFile(filePath, filename: fileName),
-      });
+  Future<UserModel> signInWithApple() async {
+    final apple = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName]);
+    final cred = fb.OAuthProvider('apple.com')
+        .credential(idToken: apple.identityToken, accessToken: apple.authorizationCode);
+    final userCred = await _auth.signInWithCredential(cred);
+    return _mapFbUser(userCred.user!);
+  }
 
-      final response = await _apiClient.dio.post(
-        ApiConstants.uploadPhoto,
-        data: formData,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return UserModel.fromJson(response.data['user']);
-      } else {
-        throw ServerException(message: response.data?['message'] ?? 'Photo upload failed');
-      }
-    } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Network error during photo upload');
+  @override
+  Future<UserModel> signInWithFacebook() async {
+    final res = await FacebookAuth.instance.login();
+    if (res.status != LoginStatus.success) {
+      throw ServerException(message: 'Facebook aborted');
     }
+    final cred = fb.FacebookAuthProvider.credential(
+      res.accessToken!.tokenString,
+    );
+    final userCred = await _auth.signInWithCredential(cred);
+    return _mapFbUser(userCred.user!);
+  }
+
+  /* avatar upload -------------------------------------------------------- */
+  @override
+  Future<UserModel> uploadProfilePhoto(File file) async {
+    final uid = _auth.currentUser!.uid;
+    final ref = _storage.ref('profile_photos/$uid.jpg');
+    await ref.putFile(file);
+    final url = await ref.getDownloadURL();
+    await _auth.currentUser!.updatePhotoURL(url);
+    return _mapFbUser(_auth.currentUser!);
   }
 }

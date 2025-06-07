@@ -39,8 +39,13 @@ dependencies:
   firebase_core: ^3.13.1
   firebase_analytics: ^11.4.6
   firebase_crashlytics: ^4.3.6
-
+  firebase_storage: ^12.4.6
+  firebase_auth: ^5.5.4
   flutter_native_splash: ^2.3.9
+
+  google_sign_in: ^6.3.0
+  flutter_facebook_auth: ^7.1.2
+  sign_in_with_apple: ^7.0.1
 
 dev_dependencies:
   flutter_test:
