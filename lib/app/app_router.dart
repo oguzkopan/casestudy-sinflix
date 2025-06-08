@@ -15,14 +15,12 @@ import 'package:sin_flix/features/shell/presentation/pages/shell_page.dart';
 import 'package:sin_flix/features/splash/presentation/pages/splash_page.dart';
 
 class AppRouter {
-  /* top-level */
   static const splashPath   = '/';
   static const loginPath    = '/login';
   static const registerPath = '/register';
   static const addPhotoPath = '/add-photo';
   static const subscriptionPath = '/subscription';
 
-  /* shell children */
   static const homePath    = '/home';
   static const profilePath = '/profile';
 
@@ -33,19 +31,16 @@ class AppRouter {
     initialLocation: splashPath,
     refreshListenable: GoRouterRefreshStream(getIt<AuthBloc>().stream),
 
-    /* ---------------- REDIRECT LOGIC ---------------- */
     redirect: (context, state) {
       final auth = getIt<AuthBloc>().state;
       getIt<LoggerService>().i(
         'Redirect  ${state.matchedLocation}  ->  ${auth.runtimeType}',
       );
 
-      /* waiting */
       if (auth is AuthInitial || auth is AuthLoading) {
         return state.matchedLocation == splashPath ? null : splashPath;
       }
 
-      /* signed-in */
       if (auth is AuthAuthenticated) {
         if ({loginPath, registerPath, addPhotoPath, splashPath}
             .contains(state.matchedLocation)) {
@@ -54,12 +49,10 @@ class AppRouter {
         return null;
       }
 
-      /* needs avatar */
       if (auth is AuthNeedsPhotoUpload) {
         return state.matchedLocation == addPhotoPath ? null : addPhotoPath;
       }
 
-      /* everything else -> login / register */
       if (state.matchedLocation != loginPath &&
           state.matchedLocation != registerPath) {
         return loginPath;
@@ -67,7 +60,6 @@ class AppRouter {
       return null;
     },
 
-    /* ---------------- ROUTE TABLE ------------------ */
     routes: [
       GoRoute(path: splashPath, builder: (_, __) => const SplashPage()),
       GoRoute(path: loginPath, builder: (_, __) => const LoginPage()),
@@ -75,7 +67,6 @@ class AppRouter {
       GoRoute(path: addPhotoPath, builder: (_, __) => const ProfilePhotoAddPage()),
       GoRoute(path: subscriptionPath, builder: (_, __) => const SubscriptionPage()),
 
-      /* shell (adds no extra segment) */
       ShellRoute(
         builder: (_, __, child) => ShellPage(child: child),
         routes: [

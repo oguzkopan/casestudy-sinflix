@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A reusable image-icon that can be colour-tinted with the [color] argument.
-///
-/// * We purposely keep [colorBlendMode] fixed to **srcIn** so the given colour
-///   replaces every non-transparent pixel in the PNG – perfect for monochrome
-///   glyphs exported from Figma.
+/// Small monochrome icon that can be tinted with [color].
+/// Default size is **14×14 px** – much smaller than before.
 class AssetIcon extends StatelessWidget {
   const AssetIcon(
       this.path, {
@@ -18,14 +15,12 @@ class AssetIcon extends StatelessWidget {
   final Color? color;
 
   @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      path,
-      width: size ?? 16,
-      height: size ?? 16,
-      fit: BoxFit.contain,
-      color: color,
-      colorBlendMode: BlendMode.srcIn,
-    );
-  }
+  Widget build(BuildContext context) => Image.asset(
+    path,
+    width: size ?? 14,   // ↓ smaller default
+    height: size ?? 14,
+    fit: BoxFit.contain,
+    color: color,
+    colorBlendMode: BlendMode.srcIn,
+  );
 }

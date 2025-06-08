@@ -46,9 +46,29 @@ class CustomTextField extends StatelessWidget {
       style: const TextStyle(color: AppColors.white),
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
+
+        prefixIconConstraints:
+        const BoxConstraints(minWidth: 30, minHeight: 30),
+        suffixIconConstraints:
+        const BoxConstraints(minWidth: 30, minHeight: 30),
+
+        contentPadding:
+        const EdgeInsets.symmetric(vertical: 14),
+
+        prefixIcon: prefixIcon == null
+            ? null
+            : Padding(
+          padding: const EdgeInsets.only(left: 10, right: 4),
+          child: prefixIcon,
+        ),
+        suffixIcon: suffixIcon == null
+            ? null
+            : Padding(
+          padding: const EdgeInsets.only(right: 10, left: 4),
+          child: suffixIcon,
+        ),
       ),
+
     );
   }
 }

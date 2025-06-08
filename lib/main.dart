@@ -12,7 +12,6 @@ import 'core/services/logger_service.dart';
 import 'features/home/presentation/cubit/liked_cubit.dart';
 
 
-// main.dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -30,10 +29,12 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: getIt<AuthBloc>()..add(AuthStatusChecked())),
-        BlocProvider.value(value: getIt<LikedCubit>()),   // << add this line
+        // 👉 just expose the bloc – no initial event here
+        BlocProvider.value(value: getIt<AuthBloc>()),
+        BlocProvider.value(value: getIt<LikedCubit>()),
       ],
       child: const AppWidget(),
     ),
   );
 }
+

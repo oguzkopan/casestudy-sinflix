@@ -12,6 +12,9 @@ import 'package:sin_flix/core/widgets/custom_button.dart';
 import 'package:sin_flix/core/widgets/custom_text_field.dart';
 import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
 
+/// ─────────────────────────────────────────────────────────────
+/// LOGIN PAGE
+/// ─────────────────────────────────────────────────────────────
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -20,43 +23,51 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey          = GlobalKey<FormState>();
-  final _emailController  = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool  _obscure = true;
+  final _formKey      = GlobalKey<FormState>();
+  final _emailCtrl    = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  bool  _obscure      = true;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _toggle() => setState(() => _obscure = !_obscure);
+  /* ───────────── helpers ───────────── */
+  void _togglePwd() => setState(() => _obscure = !_obscure);
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      context.read<AuthBloc>().add(AuthLoginRequested(
-        email:    _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      ));
+      context.read<AuthBloc>().add(
+        AuthLoginRequested(
+          email   : _emailCtrl.text.trim(),
+          password: _passwordCtrl.text.trim(),
+        ),
+      );
     }
   }
 
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  /* ───────────────────────── UI ───────────────────────── */
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: BlocListener<AuthBloc, AuthState>(
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listenWhen: (_, s) => s is AuthFailure,
         listener: (_, s) {
-          if (s is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(s.message), backgroundColor: AppColors.primaryRed),
-            );
-          }
+          _passwordCtrl.clear(); // keep e-mail, clear pwd
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text((s as AuthFailure).message),
+              backgroundColor: AppColors.primaryRed,
+            ),
+          );
         },
-        child: SafeArea(
+
+        builder: (_, __) => SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Form(
@@ -72,33 +83,44 @@ class _LoginPageState extends State<LoginPage> {
                       textAlign: TextAlign.center),
                   const SizedBox(height: 8),
                   Text(
-                    'Tempus varius ei vitae interdum id tortor elementum tristique eleifend at.',
+                    'Tempus varius ei vitae interdum id tortor elementum '
+                        'tristique eleifend at.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: h * .04),
 
+                  /* E-posta -------------------------------------------------- */
                   CustomTextField(
-                    controller: _emailController,
-                    hintText: 'E-Posta',
+                    controller  : _emailCtrl,
+                    hintText    : 'E-Posta',
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const AssetIcon(AppAssets.mailIcon),
-                    validator: (v) => (v?.contains('@') ?? false) ? null : 'Geçerli e-posta girin',
+                    prefixIcon  : const AssetIcon(AppAssets.mailIcon),
+                    validator   : (v) =>
+                    (v?.contains('@') ?? false)
+                        ? null
+                        : 'Geçerli e-posta girin',
                   ),
                   const SizedBox(height: 16),
 
+                  /* Şifre --------------------------------------------------- */
                   CustomTextField(
-                    controller: _passwordController,
-                    hintText: 'Şifre',
+                    controller : _passwordCtrl,
+                    hintText   : 'Şifre',
                     obscureText: _obscure,
-                    prefixIcon: const AssetIcon(AppAssets.lockIcon),
-                    suffixIcon: GestureDetector(
-                      onTap: _toggle,
-                      child: AssetIcon(_obscure ? AppAssets.eyeClosed : AppAssets.eyeOpen),
+                    prefixIcon : const AssetIcon(AppAssets.lockIcon),
+                    suffixIcon : GestureDetector(
+                      onTap : _togglePwd,
+                      child : AssetIcon(
+                        _obscure ? AppAssets.eyeClosed : AppAssets.eyeOpen,
+                        size: 18,
+                      ),
                     ),
-                    validator: (v) => (v != null && v.length >= 6) ? null : 'En az 6 karakter',
+                    validator: (v) =>
+                    (v != null && v.length >= 6)
+                        ? null
+                        : 'En az 6 karakter',
                   ),
-
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -108,22 +130,20 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
 
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (_, s) => CustomButton(
-                      text: 'Giriş Yap',
-                      isLoading: s is AuthLoading,
-                      onPressed: _submit,
-                    ),
+                  /* submit -------------------------------------------------- */
+                  CustomButton(
+                    text     : 'Giriş Yap',
+                    onPressed: _submit,
                   ),
                   const SizedBox(height: 24),
 
-                  _SocialRow(),
-
+                  const _SocialRow(),
                   const SizedBox(height: 32),
+
                   _BottomPrompt(
                     question: 'Bir hesabın yok mu? ',
-                    action: 'Kayıt Ol',
-                    onTap: () => context.push(AppRouter.registerPath),
+                    action  : 'Kayıt Ol',
+                    onTap   : () => context.push(AppRouter.registerPath),
                   ),
                 ],
               ),
@@ -135,17 +155,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/* ------------------------- shared bits ------------------------------- */
-
 class _SocialRow extends StatelessWidget {
+  const _SocialRow();
+
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => const Row(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       _SquareBtn(AppAssets.googleIcon),
-      const SizedBox(width: 20),
+      SizedBox(width: 20),
       _SquareBtn(AppAssets.appleIcon),
-      const SizedBox(width: 20),
+      SizedBox(width: 20),
       _SquareBtn(AppAssets.facebookIcon),
     ],
   );
@@ -161,22 +181,27 @@ class _SquareBtn extends StatelessWidget {
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
     child: Container(
-      width: 56,
-      height: 56,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
         color: AppColors.inputBackground,
         borderRadius: BorderRadius.circular(8),
       ),
       alignment: Alignment.center,
-      child: Image.asset(icon, width: 24, height: 24),
+      child: Image.asset(icon, width: 20, height: 20),
     ),
   );
 }
 
 class _BottomPrompt extends StatelessWidget {
-  const _BottomPrompt(
-      {required this.question, required this.action, required this.onTap});
-  final String question, action;
+  const _BottomPrompt({
+    required this.question,
+    required this.action,
+    required this.onTap,
+  });
+
+  final String      question;
+  final String      action;
   final VoidCallback onTap;
 
   @override
@@ -192,9 +217,11 @@ class _BottomPrompt extends StatelessWidget {
         TextSpan(
           text: action,
           style: const TextStyle(
-              color: AppColors.primaryRed, fontWeight: FontWeight.w700),
+            color: AppColors.primaryRed,
+            fontWeight: FontWeight.w700,
+          ),
           recognizer: TapGestureRecognizer()..onTap = onTap,
-        )
+        ),
       ],
     ),
   );
