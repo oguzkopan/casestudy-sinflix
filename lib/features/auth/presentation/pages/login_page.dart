@@ -1,10 +1,13 @@
+// lib/features/auth/presentation/pages/login_page.dart
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:sin_flix/app/app_router.dart';
 import 'package:sin_flix/core/constants/app_assets.dart';
 import 'package:sin_flix/core/theme/app_colors.dart';
+import 'package:sin_flix/core/widgets/asset_icon.dart';
 import 'package:sin_flix/core/widgets/custom_button.dart';
 import 'package:sin_flix/core/widgets/custom_text_field.dart';
 import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
@@ -17,10 +20,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController    = TextEditingController();
+  final _formKey          = GlobalKey<FormState>();
+  final _emailController  = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscureText = true;
+  bool  _obscure = true;
 
   @override
   void dispose() {
@@ -29,13 +32,12 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _togglePasswordVisibility() =>
-      setState(() => _obscureText = !_obscureText);
+  void _toggle() => setState(() => _obscure = !_obscure);
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(AuthLoginRequested(
-        email: _emailController.text.trim(),
+        email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       ));
     }
@@ -43,18 +45,15 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme   = Theme.of(context).textTheme;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final h = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthFailure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.primaryRed));
+        listener: (_, s) {
+          if (s is AuthFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(s.message), backgroundColor: AppColors.primaryRed),
+            );
           }
         },
         child: SafeArea(
@@ -63,94 +62,69 @@ class _LoginPageState extends State<LoginPage> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: screenHeight * .05),
+                  SizedBox(height: h * .05),
                   Image.asset(AppAssets.appLogo, height: 50),
-                  SizedBox(height: screenHeight * .05),
+                  SizedBox(height: h * .05),
 
-                  // Headline + sub-text
                   Text('Merhabalar',
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineSmall),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center),
                   const SizedBox(height: 8),
                   Text(
-                    'Tempus varius ei vitae interdum id elementum tristique sed fend elt.',
+                    'Tempus varius ei vitae interdum id tortor elementum tristique eleifend at.',
+                    style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.lightGrey),
                   ),
-                  SizedBox(height: screenHeight * .04),
+                  SizedBox(height: h * .04),
 
-                  // Email
                   CustomTextField(
                     controller: _emailController,
                     hintText: 'E-Posta',
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'E-posta boş olamaz';
-                      if (!v.contains('@') || !v.contains('.')) {
-                        return 'Geçerli bir e-posta girin';
-                      }
-                      return null;
-                    },
+                    prefixIcon: const AssetIcon(AppAssets.mailIcon),
+                    validator: (v) => (v?.contains('@') ?? false) ? null : 'Geçerli e-posta girin',
                   ),
                   const SizedBox(height: 16),
 
-                  // Password
                   CustomTextField(
                     controller: _passwordController,
                     hintText: 'Şifre',
-                    obscureText: _obscureText,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                      ),
-                      onPressed: _togglePasswordVisibility,
+                    obscureText: _obscure,
+                    prefixIcon: const AssetIcon(AppAssets.lockIcon),
+                    suffixIcon: GestureDetector(
+                      onTap: _toggle,
+                      child: AssetIcon(_obscure ? AppAssets.eyeClosed : AppAssets.eyeOpen),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Şifre boş olamaz';
-                      if (v.length < 6) return 'Şifre en az 6 karakter olmalı';
-                      return null;
-                    },
+                    validator: (v) => (v != null && v.length >= 6) ? null : 'En az 6 karakter',
                   ),
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {}, // TODO: forgot-password flow
-                      child: const Text('Şifremi Unuttum'),
+                      child: const Text('Şifremi unuttum'),
+                      onPressed: () {/* TODO */},
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-                  // Login button
                   BlocBuilder<AuthBloc, AuthState>(
-                    builder: (_, state) => CustomButton(
+                    builder: (_, s) => CustomButton(
                       text: 'Giriş Yap',
-                      isLoading: state is AuthLoading,
-                      onPressed: _login,
+                      isLoading: s is AuthLoading,
+                      onPressed: _submit,
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Social buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _SocialIcon(AppAssets.googleIcon, onTap: () {}),
-                      const SizedBox(width: 20),
-                      _SocialIcon(AppAssets.appleIcon,  onTap: () {}),
-                      const SizedBox(width: 20),
-                      _SocialIcon(AppAssets.facebookIcon, onTap: () {}),
-                    ],
-                  ),
+                  _SocialRow(),
 
                   const SizedBox(height: 32),
-                  _buildRegisterPrompt(context),
+                  _BottomPrompt(
+                    question: 'Bir hesabın yok mu? ',
+                    action: 'Kayıt Ol',
+                    onTap: () => context.push(AppRouter.registerPath),
+                  ),
                 ],
               ),
             ),
@@ -159,44 +133,69 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+}
 
-  /// Rounded-square 56×56 icon
-  Widget _SocialIcon(String asset, {required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 56,
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Image.asset(asset, width: 24, height: 24),
-      ),
-    );
-  }
+/* ------------------------- shared bits ------------------------------- */
 
-  Widget _buildRegisterPrompt(BuildContext context) {
-    return RichText(
-      textAlign: TextAlign.center,
-      text: TextSpan(
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(color: AppColors.lightGrey),
-        text: 'Bir hesabın yok mu? ',
-        children: [
-          TextSpan(
-            text: 'Kayıt Ol',
-            style: const TextStyle(
-                color: AppColors.primaryRed, fontWeight: FontWeight.bold),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => context.push(AppRouter.registerPath),
-          ),
-        ],
+class _SocialRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      _SquareBtn(AppAssets.googleIcon),
+      const SizedBox(width: 20),
+      _SquareBtn(AppAssets.appleIcon),
+      const SizedBox(width: 20),
+      _SquareBtn(AppAssets.facebookIcon),
+    ],
+  );
+}
+
+class _SquareBtn extends StatelessWidget {
+  const _SquareBtn(this.icon, {this.onTap});
+  final String icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(8),
       ),
-    );
-  }
+      alignment: Alignment.center,
+      child: Image.asset(icon, width: 24, height: 24),
+    ),
+  );
+}
+
+class _BottomPrompt extends StatelessWidget {
+  const _BottomPrompt(
+      {required this.question, required this.action, required this.onTap});
+  final String question, action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => RichText(
+    textAlign: TextAlign.center,
+    text: TextSpan(
+      style: Theme.of(context)
+          .textTheme
+          .bodyMedium
+          ?.copyWith(color: AppColors.lightGrey),
+      text: question,
+      children: [
+        TextSpan(
+          text: action,
+          style: const TextStyle(
+              color: AppColors.primaryRed, fontWeight: FontWeight.w700),
+          recognizer: TapGestureRecognizer()..onTap = onTap,
+        )
+      ],
+    ),
+  );
 }

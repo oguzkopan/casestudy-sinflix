@@ -2,26 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:sin_flix/core/theme/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final Color backgroundColor;
-  final Color textColor;
-  final double borderRadius;
-  final EdgeInsets padding;
-  final Widget? icon;
-
   const CustomButton({
     super.key,
     required this.text,
     this.onPressed,
-    this.isLoading = false,
+    this.isLoading     = false,
     this.backgroundColor = AppColors.primaryRed,
-    this.textColor = AppColors.white,
-    this.borderRadius = 8.0,
-    this.padding = const EdgeInsets.symmetric(vertical: 16.0),
+    this.textColor       = AppColors.white,
+    this.borderRadius    = 8,
+    this.padding         = const EdgeInsets.symmetric(vertical: 16),
     this.icon,
+    this.textStyle,
+    this.fullWidth       = true,
   });
+
+  /* ------------------------------------------------------------------ */
+  /// Small pill-shaped helper used on profile page (“Fotoğraf Ekle”)
+  factory CustomButton.mini({
+    required String text,
+    required VoidCallback onPressed,
+  }) {
+    return CustomButton(
+      text       : text,
+      onPressed  : onPressed,
+      padding    : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      borderRadius: 20,
+      textStyle  : const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      fullWidth  : false,
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  final String            text;
+  final VoidCallback?     onPressed;
+  final bool              isLoading;
+  final Color             backgroundColor;
+  final Color             textColor;
+  final double            borderRadius;
+  final EdgeInsets        padding;
+  final Widget?           icon;
+  final TextStyle?        textStyle;
+  final bool              fullWidth;   // false for the mini-variant
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +50,10 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         padding: padding,
+        minimumSize: fullWidth ? const Size(double.infinity, 50) : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
         ),
-        minimumSize: const Size(double.infinity, 50),
       ),
       onPressed: isLoading ? null : onPressed,
       child: isLoading
@@ -46,6 +67,7 @@ class CustomButton extends StatelessWidget {
       )
           : Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
             icon!,
@@ -53,10 +75,11 @@ class CustomButton extends StatelessWidget {
           ],
           Text(
             text,
-            style: TextStyle(
-                color: textColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold),
+            style: textStyle ??
+                const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
           ),
         ],
       ),

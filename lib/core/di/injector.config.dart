@@ -23,6 +23,7 @@ import '../../features/auth/domain/usecases/check_auth_status.dart' as _i643;
 import '../../features/auth/domain/usecases/login.dart' as _i428;
 import '../../features/auth/domain/usecases/logout.dart' as _i597;
 import '../../features/auth/domain/usecases/register.dart' as _i480;
+import '../../features/auth/domain/usecases/social_login.dart' as _i1029;
 import '../../features/auth/domain/usecases/upload_profile_photo_usecase.dart'
     as _i1030;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
@@ -62,6 +63,8 @@ _i174.GetIt $initGetIt(
       () => _i643.CheckAuthStatus(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i597.Logout>(
       () => _i597.Logout(gh<_i787.AuthRepository>()));
+  gh.lazySingleton<_i1029.SocialLogin>(
+      () => _i1029.SocialLogin(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i1030.UploadProfilePhotoUsecase>(
       () => _i1030.UploadProfilePhotoUsecase(gh<_i787.AuthRepository>()));
   gh.lazySingleton<_i797.AuthBloc>(() => _i797.AuthBloc(

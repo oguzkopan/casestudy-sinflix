@@ -1,37 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sin_flix/core/di/injector.dart';
-import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
+import '../../data/film.dart';
+import '../widgets/film_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
+  late final Future<List<Film>> _filmsFuture = Film.loadFromAsset();
+  final _pageCtrl = PageController();
+
   @override
   bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Keşfet (SinFlix)'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              context.read<AuthBloc>().add(AuthLogoutRequested());
-            },
-          )
-        ],
-      ),
-      body: const Center(
-        child: Text('Home Page - Film Listesi Buraya Gelecek'),
-      ),
+    return FutureBuilder<List<Film>>(
+      future: _filmsFuture,
+      builder: (_, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final films = snap.data!;
+        return PageView.builder(
+          key: const PageStorageKey('home_page'),  // remember position
+          controller: _pageCtrl,
+          scrollDirection: Axis.vertical,
+          itemCount: films.length,
+          itemBuilder: (_, i) => FilmCard(film: films[i]),
+        );
+      },
     );
   }
 }

@@ -1,8 +1,12 @@
+// lib/features/auth/presentation/pages/profile_photo_add_page.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'package:sin_flix/core/constants/app_assets.dart';
 import 'package:sin_flix/core/theme/app_colors.dart';
+import 'package:sin_flix/core/widgets/asset_icon.dart';
 import 'package:sin_flix/core/widgets/custom_button.dart';
 import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
 
@@ -14,97 +18,109 @@ class ProfilePhotoAddPage extends StatefulWidget {
 }
 
 class _ProfilePhotoAddPageState extends State<ProfilePhotoAddPage> {
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
+  File? _file;
+  final _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+  Future<void> _pick() async {
+    final f = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (f != null) setState(() => _file = File(f.path));
   }
 
-  void _continueAction() {
-    if (_imageFile != null) {
-      context.read<AuthBloc>().add(AuthPhotoUploadRequested(imageFile: _imageFile!));
-    } else {
-      context.read<AuthBloc>().add(AuthPhotoUploadSkipped());
-    }
+  void _continue() {
+    final bloc = context.read<AuthBloc>();
+    _file != null
+        ? bloc.add(AuthPhotoUploadRequested(imageFile: _file!))
+        : bloc.add(AuthPhotoUploadSkipped());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text('Profil Fotoğrafı Ekle'),
-        centerTitle: true,
-      ),
-      body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthFailure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(
-                  content: Text("Fotoğraf Yüklenemedi: ${state.message}"),
-                  backgroundColor: AppColors.primaryRed));
-          }
-        },
+      backgroundColor: AppColors.primaryBlack,
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Column(
+              /* ---------------- header row ---------------- */
+              Row(
                 children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    'Fotoğrafınızı Yükleyin',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Resources aut exercitus obdormiverit relaxation floor isis cc.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.lightGrey),
-                  ),
-                  const SizedBox(height: 40),
-                  Center(
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: AppColors.inputBackground,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.lightGrey.withOpacity(0.5), width: 1),
-                          image: _imageFile != null
-                              ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
-                              : null,
+                  InkWell(
+                    onTap: () => Navigator.of(context).pop(),
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlack,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppColors.lightGrey.withOpacity(.4),
+                          width: 1,
                         ),
-                        child: _imageFile == null
-                            ? const Icon(Icons.add_a_photo_outlined, color: AppColors.lightGrey, size: 50)
-                            : null,
                       ),
+                      alignment: Alignment.center,
+                      child: const AssetIcon(AppAssets.backIcon),
                     ),
                   ),
+                  const Spacer(),
+                  Text('Profil Detayı',
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const Spacer(flex: 2),
                 ],
               ),
-              BlocBuilder<AuthBloc, AuthState>(
-                builder: (context, state) {
-                  return CustomButton(
-                    text: 'Devam Et',
-                    onPressed: _continueAction,
-                    isLoading: state is AuthLoading,
-                  );
-                },
+              const SizedBox(height: 32),
+
+              /* -------------- headline & blurb ------------- */
+              Text('Fotoğraflarınızı Yükleyin',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(
+                'Resources aut incentivize relaxation floor loss cc.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.lightGrey),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 48),
+
+              /* -------------- square picker ------------- */
+              GestureDetector(
+                onTap: _pick,
+                child: Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: AppColors.inputBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.lightGrey.withOpacity(.3),
+                    ),
+                    image: _file != null
+                        ? DecorationImage(
+                        image: FileImage(_file!), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: _file == null
+                      ? const AssetIcon(AppAssets.plusIcon)
+                      : null,
+                ),
+              ),
+
+              /* ---- spacer pushes button to bottom ---- */
+              const Spacer(),
+
+              BlocBuilder<AuthBloc, AuthState>(
+                builder: (_, s) => CustomButton(
+                  text: 'Devam Et',
+                  isLoading: s is AuthLoading,
+                  onPressed: _continue,
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

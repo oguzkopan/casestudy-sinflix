@@ -1,0 +1,37 @@
+[
+  {
+    "id": "teen-titans",
+    "title": "Teen Titans Go!",
+    "description": "Süper kahraman ev arkadaşları Robin, Starfire, Raven, Beast Boy ve Cyborg didişmekten ve rekabet etmekten vakit bulduklarında Jump City'yi kötülerden korur.",
+    "studio": "TV-PG",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_bestv2/udaLIJ6Na7GOHjvTlyP9JFPTccv.jpg"
+  },
+  {
+    "id": "lost-space",
+    "title": "Kayıp Uzaylı",
+    "description": "Ankara-merkezli epik bir yolculuk.",
+    "studio": "Blue World",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_bestv2/t3cmnXYtxJb9vVL1ThvT2CWSe1n.jpg"
+  },
+  {
+    "id": "hesaplasma",
+    "title": "Hesaplaşma 2",
+    "description": "Bulmacaları sever misin?",
+    "studio": "Prime",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_bestv2/w2HHTJxNcOzri7A0MPSAiIj6HvG.jpg"
+  },
+  {
+    "id": "the-litchi",
+    "title": "The Litchi Road",
+    "description": "The story follows Li Shande, a man deceived by his colleagues and demoted from his supervisory role. Now forced to become the “Lychee Envoy,” he faces a near-impossible mission to deliver fresh lychees from Lingnan to Chang’an as a birthday gift for the Noble Consort. The saying goes that lychees change color in one day, lose their fragrance in two, and their flavor in three days. With more than 5,000 li between Lingnan and Chang’an, and under tight deadlines with limited resources, how can he possibly pull it off?",
+    "studio": "Blue World",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_bestv2/egFbeyzLU2l0quqGVaRoYRNsmET.jpg"
+  },
+  {
+    "id": "son-damla",
+    "title": "Son Damla",
+    "description": "Bardağı taşıran son damla hangisi olacak? Çalışkan bir bekâr anne, felaketlerle dolu bir gün nedeniyle dayanma sınırına ulaşınca çaresizlik içinde şaşırtıcı bir hamle yapar.\n\n",
+    "studio": "Netflix",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_bestv2/t3cmnXYtxJb9vVL1ThvT2CWSe1n.jpg"
+  }
+]

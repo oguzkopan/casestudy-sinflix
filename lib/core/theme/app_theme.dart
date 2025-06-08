@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sin_flix/core/theme/app_colors.dart';
 
 class AppTheme {
+  /* helper that applies EuclidCircularA across the default dark textTheme */
+  static TextTheme _euclid(TextTheme base) => base.copyWith(
+    /* Headlines ------------------------------------------------------ */
+    displayLarge:   base.displayLarge?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w700, color: AppColors.white),
+    displayMedium:  base.displayMedium?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w700, color: AppColors.white),
+    displaySmall:   base.displaySmall?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w700, color: AppColors.white),
+    headlineMedium: base.headlineMedium?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w700, color: AppColors.white),
+    headlineSmall:  base.headlineSmall?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w600, color: AppColors.white),
+
+    /* Body ----------------------------------------------------------- */
+    titleLarge:  base.titleLarge ?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w600, color: AppColors.white),
+    bodyLarge:   base.bodyLarge  ?.copyWith(
+        fontFamily: 'EuclidCircularA', color: AppColors.white),
+    bodyMedium:  base.bodyMedium ?.copyWith(
+        fontFamily: 'EuclidCircularA', color: AppColors.white.withOpacity(.85)),
+    labelLarge:  base.labelLarge ?.copyWith(
+        fontFamily: 'EuclidCircularA', fontWeight: FontWeight.w700, color: AppColors.white),
+  );
+
+  /* -------------------------- THEME ------------------------------------ */
   static ThemeData get darkTheme {
-    return ThemeData(
-      brightness: Brightness.dark,
-      primaryColor: AppColors.primaryRed,
+    final base = ThemeData.dark();
+
+    return base.copyWith(
       scaffoldBackgroundColor: AppColors.primaryBlack,
+      primaryColor: AppColors.primaryRed,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryRed,
         secondary: AppColors.primaryRed,
@@ -20,68 +46,76 @@ class AppTheme {
         error: Colors.redAccent,
         onError: AppColors.white,
       ),
-      textTheme: GoogleFonts.montserratTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-        displayMedium: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-        displaySmall: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-        headlineMedium: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-        headlineSmall: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600),
-        titleLarge: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600),
-        bodyLarge: const TextStyle(color: AppColors.white),
-        bodyMedium: TextStyle(color: AppColors.white.withOpacity(0.8)),
-        labelLarge: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 16),
-      ),
+      textTheme: _euclid(base.textTheme),
+
+      /* AppBar ----------------------------------------------------------- */
       appBarTheme: const AppBarTheme(
-        color: AppColors.darkGrey,
+        backgroundColor: AppColors.darkGrey,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.white),
         titleTextStyle: TextStyle(
-            color: AppColors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          fontFamily: 'EuclidCircularA',
+          fontWeight: FontWeight.w700,
+          fontSize: 20,
+          color: AppColors.white,
+        ),
       ),
+
+      /* Inputs ----------------------------------------------------------- */
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputBackground,
-        hintStyle: const TextStyle(color: AppColors.hintColor),
-        labelStyle: const TextStyle(color: AppColors.white),
+        hintStyle: const TextStyle(
+            fontFamily: 'EuclidCircularA',
+            color: AppColors.hintColor,
+            fontWeight: FontWeight.w400),
+        labelStyle: const TextStyle(fontFamily: 'EuclidCircularA', color: AppColors.white),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: AppColors.primaryRed, width: 1.5),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(width: 1.4, color: AppColors.primaryRed),
         ),
         prefixIconColor: AppColors.hintColor,
         suffixIconColor: AppColors.hintColor,
       ),
+
+      /* Buttons ---------------------------------------------------------- */
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryRed,
           foregroundColor: AppColors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
+          minimumSize: const Size.fromHeight(48),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          textStyle: const TextStyle(
+            fontFamily: 'EuclidCircularA',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
           ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.lightGrey,
-          textStyle: const TextStyle(fontWeight: FontWeight.w500),
+          textStyle: const TextStyle(
+            fontFamily: 'EuclidCircularA',
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
+
+      /* Bottom-nav ------------------------------------------------------- */
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.primaryBlack,
         selectedItemColor: AppColors.primaryRed,
         unselectedItemColor: AppColors.lightGrey,
         type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true, // Or false if labels are not in design
-        showUnselectedLabels: true, // Or false
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
       ),
     );
   }

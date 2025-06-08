@@ -10,17 +10,19 @@ import 'package:sin_flix/features/auth/presentation/pages/profile_photo_add_page
 import 'package:sin_flix/features/auth/presentation/pages/register_page.dart';
 import 'package:sin_flix/features/home/presentation/pages/home_page.dart';
 import 'package:sin_flix/features/profile/presentation/pages/profile_page.dart';
-import 'package:sin_flix/features/splash/presentation/pages/splash_page.dart';
+import 'package:sin_flix/features/profile/presentation/pages/subscription_page.dart';
 import 'package:sin_flix/features/shell/presentation/pages/shell_page.dart';
+import 'package:sin_flix/features/splash/presentation/pages/splash_page.dart';
 
 class AppRouter {
-  // ---------- canonical paths ----------
+  /* top-level */
   static const splashPath   = '/';
   static const loginPath    = '/login';
   static const registerPath = '/register';
   static const addPhotoPath = '/add-photo';
+  static const subscriptionPath = '/subscription';
 
-  // pages that live inside the Shell
+  /* shell children */
   static const homePath    = '/home';
   static const profilePath = '/profile';
 
@@ -31,18 +33,19 @@ class AppRouter {
     initialLocation: splashPath,
     refreshListenable: GoRouterRefreshStream(getIt<AuthBloc>().stream),
 
-    // ---------- REDIRECT ----------
+    /* ---------------- REDIRECT LOGIC ---------------- */
     redirect: (context, state) {
       final auth = getIt<AuthBloc>().state;
-      final log  = getIt<LoggerService>();
-      log.i('Redirect  ${state.matchedLocation}  ->  ${auth.runtimeType}');
+      getIt<LoggerService>().i(
+        'Redirect  ${state.matchedLocation}  ->  ${auth.runtimeType}',
+      );
 
-      // waiting
+      /* waiting */
       if (auth is AuthInitial || auth is AuthLoading) {
         return state.matchedLocation == splashPath ? null : splashPath;
       }
 
-      // logged in
+      /* signed-in */
       if (auth is AuthAuthenticated) {
         if ({loginPath, registerPath, addPhotoPath, splashPath}
             .contains(state.matchedLocation)) {
@@ -51,12 +54,12 @@ class AppRouter {
         return null;
       }
 
-      // needs avatar
+      /* needs avatar */
       if (auth is AuthNeedsPhotoUpload) {
         return state.matchedLocation == addPhotoPath ? null : addPhotoPath;
       }
 
-      // everyone else → login/register only
+      /* everything else -> login / register */
       if (state.matchedLocation != loginPath &&
           state.matchedLocation != registerPath) {
         return loginPath;
@@ -64,25 +67,26 @@ class AppRouter {
       return null;
     },
 
-    // ---------- ROUTE TABLE ----------
+    /* ---------------- ROUTE TABLE ------------------ */
     routes: [
-      GoRoute(path: splashPath,   builder: (_, __) => const SplashPage()),
-      GoRoute(path: loginPath,    builder: (_, __) => const LoginPage()),
+      GoRoute(path: splashPath, builder: (_, __) => const SplashPage()),
+      GoRoute(path: loginPath, builder: (_, __) => const LoginPage()),
       GoRoute(path: registerPath, builder: (_, __) => const RegisterPage()),
       GoRoute(path: addPhotoPath, builder: (_, __) => const ProfilePhotoAddPage()),
+      GoRoute(path: subscriptionPath, builder: (_, __) => const SubscriptionPage()),
 
-      /// ShellRoute *adds no segment* of its own; children keep their full "/"
+      /* shell (adds no extra segment) */
       ShellRoute(
         builder: (_, __, child) => ShellPage(child: child),
         routes: [
           GoRoute(
-            path: AppRouter.homePath,          // '/home'  ✅
+            path: homePath,
             name: 'home',
             pageBuilder: (_, __) =>
             const NoTransitionPage(child: HomePage()),
           ),
           GoRoute(
-            path: AppRouter.profilePath,       // '/profile'  ✅
+            path: profilePath,
             name: 'profile',
             pageBuilder: (_, __) =>
             const NoTransitionPage(child: ProfilePage()),
@@ -93,12 +97,15 @@ class AppRouter {
   );
 }
 
-/* ------------ notifies GoRouter when AuthBloc emits ------------- */
+/* notifies GoRouter when AuthBloc emits */
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     _sub = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
   late final StreamSubscription _sub;
   @override
-  void dispose() { _sub.cancel(); super.dispose(); }
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
 }
