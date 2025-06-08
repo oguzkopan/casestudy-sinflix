@@ -6,6 +6,7 @@ class AppAssets {
   static const _logoBasePath    = 'assets/logo';
   static const _imagesBasePath  = 'assets/images';
   static const _lottieBasePath  = 'assets/lottie';
+  static const subscription = 'assets/images/subscription.png';
 
   /* -------------------- LOGO -------------------- */
   static const appLogo    = '$_logoBasePath/app_icon.png';

@@ -1,4 +1,3 @@
-// lib/features/auth/presentation/pages/register_page.dart
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,10 +10,10 @@ import 'package:sin_flix/core/widgets/asset_icon.dart';
 import 'package:sin_flix/core/widgets/custom_button.dart';
 import 'package:sin_flix/core/widgets/custom_text_field.dart';
 import 'package:sin_flix/features/auth/presentation/bloc/auth_bloc.dart';
+import 'login_page.dart' show SplashWaiting;          // ⬅ reuse spinner
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
-
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -62,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
           name     : _nameCtrl.text.trim(),
           email    : _emailCtrl.text.trim(),
           password : _pwdCtrl.text.trim(),
-          birthDate: '',                    // doğum tarihi alınmıyor
+          birthDate: '', // doğum tarihi alınmıyor
         ),
       );
     }
@@ -75,142 +74,172 @@ class _RegisterPageState extends State<RegisterPage> {
     final th = Theme.of(context).textTheme;
 
     return Scaffold(
+      /* top left “back” */
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon : const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
-      body: BlocListener<AuthBloc, AuthState>(
-        listener: (_, s) {
-          if (s is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(s.message), backgroundColor: AppColors.primaryRed),
-            );
-          }
+
+      /* ---------- body ---------- */
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listenWhen: (_, s) => s is AuthFailure,
+        listener  : (_, s) {
+          // clear password boxes & show the error
+          _pwdCtrl.clear();
+          _pwdConfirmCtrl.clear();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text((s as AuthFailure).message),
+              backgroundColor: AppColors.primaryRed,
+            ),
+          );
         },
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: h * .02),
-                  Text('Hoşgeldiniz', textAlign: TextAlign.center, style: th.headlineSmall),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tempus varius ei vitae interdum id tortor elementum tristique eleifend at.',
-                    textAlign: TextAlign.center,
-                    style: th.bodyMedium?.copyWith(color: AppColors.lightGrey),
-                  ),
-                  SizedBox(height: h * .03),
 
-                  /* Ad Soyad */
-                  CustomTextField(
-                    controller: _nameCtrl,
-                    hintText  : 'Ad Soyad',
-                    prefixIcon: const AssetIcon(AppAssets.nameIcon),
-                    validator : (v) => (v?.isEmpty ?? true) ? 'Ad Soyad boş olamaz' : null,
-                  ),
-                  const SizedBox(height: 16),
+        builder: (_, state) {
+          /* 1️⃣  show full-screen splash while waiting */
+          if (state is AuthLoading) return const SplashWaiting();
 
-                  /* E-posta */
-                  CustomTextField(
-                    controller : _emailCtrl,
-                    hintText   : 'E-Posta',
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon : const AssetIcon(AppAssets.mailIcon),
-                    validator  : (v) =>
-                    (v != null && v.contains('@') && v.contains('.'))
-                        ? null : 'Geçerli e-posta girin',
-                  ),
-                  const SizedBox(height: 16),
-
-                  /* Şifre */
-                  CustomTextField(
-                    controller : _pwdCtrl,
-                    hintText   : 'Şifre',
-                    obscureText: _obscure1,
-                    prefixIcon : const AssetIcon(AppAssets.lockIcon),
-                    suffixIcon : GestureDetector(
-                      onTap : _toggle1,
-                      child : AssetIcon(_obscure1 ? AppAssets.eyeClosed : AppAssets.eyeOpen),
+          /* 2️⃣  normal register form */
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: h * .02),
+                    Text('Hoşgeldiniz',
+                        textAlign: TextAlign.center,
+                        style: th.headlineSmall),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tempus varius ei vitae interdum id tortor elementum '
+                          'tristique eleifend at.',
+                      textAlign: TextAlign.center,
+                      style: th.bodyMedium
+                          ?.copyWith(color: AppColors.lightGrey),
                     ),
-                    validator: (v) =>
-                    (v != null && v.length >= 6) ? null : 'En az 6 karakter',
-                  ),
-                  const SizedBox(height: 16),
+                    SizedBox(height: h * .03),
 
-                  /* Şifre tekrar */
-                  CustomTextField(
-                    controller : _pwdConfirmCtrl,
-                    hintText   : 'Şifre Tekrar',
-                    obscureText: _obscure2,
-                    prefixIcon : const AssetIcon(AppAssets.lockIcon),
-                    suffixIcon : GestureDetector(
-                      onTap : _toggle2,
-                      child : AssetIcon(_obscure2 ? AppAssets.eyeClosed : AppAssets.eyeOpen),
+                    /* ------------- inputs ------------- */
+                    CustomTextField(
+                      controller: _nameCtrl,
+                      hintText  : 'Ad Soyad',
+                      prefixIcon: const AssetIcon(AppAssets.nameIcon),
+                      validator : (v) =>
+                      (v?.isEmpty ?? true) ? 'Ad Soyad boş olamaz' : null,
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty)      return 'Şifre tekrar boş olamaz';
-                      if (v != _pwdCtrl.text)          return 'Şifreler eşleşmiyor';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  _buildAgreement(),                      // <── fixed
-                  const SizedBox(height: 24),
+                    CustomTextField(
+                      controller : _emailCtrl,
+                      hintText   : 'E-Posta',
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon : const AssetIcon(AppAssets.mailIcon),
+                      validator  : (v) =>
+                      (v != null && v.contains('@') && v.contains('.'))
+                          ? null
+                          : 'Geçerli e-posta girin',
+                    ),
+                    const SizedBox(height: 16),
 
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (_, s) => CustomButton(
+                    CustomTextField(
+                      controller : _pwdCtrl,
+                      hintText   : 'Şifre',
+                      obscureText: _obscure1,
+                      prefixIcon : const AssetIcon(AppAssets.lockIcon),
+                      suffixIcon : GestureDetector(
+                        onTap : _toggle1,
+                        child : AssetIcon(
+                          _obscure1
+                              ? AppAssets.eyeClosed
+                              : AppAssets.eyeOpen,
+                        ),
+                      ),
+                      validator: (v) =>
+                      (v != null && v.length >= 6)
+                          ? null
+                          : 'En az 6 karakter',
+                    ),
+                    const SizedBox(height: 16),
+
+                    CustomTextField(
+                      controller : _pwdConfirmCtrl,
+                      hintText   : 'Şifre Tekrar',
+                      obscureText: _obscure2,
+                      prefixIcon : const AssetIcon(AppAssets.lockIcon),
+                      suffixIcon : GestureDetector(
+                        onTap : _toggle2,
+                        child : AssetIcon(
+                          _obscure2
+                              ? AppAssets.eyeClosed
+                              : AppAssets.eyeOpen,
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Şifre tekrar boş olamaz';
+                        }
+                        if (v != _pwdCtrl.text) {
+                          return 'Şifreler eşleşmiyor';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildAgreement(),
+                    const SizedBox(height: 24),
+
+                    CustomButton(
                       text      : 'Şimdi Kaydol',
-                      isLoading : s is AuthLoading,
+                      isLoading : false,
                       onPressed : _submit,
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  /* Social buttons */
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _SocialBtn(AppAssets.googleIcon,   onTap: () {}),
-                      const SizedBox(width: 20),
-                      _SocialBtn(AppAssets.appleIcon,    onTap: () {}),
-                      const SizedBox(width: 20),
-                      _SocialBtn(AppAssets.facebookIcon, onTap: () {}),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+                    /* social buttons (static) */
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _SocialBtn(AppAssets.googleIcon  , onTap: () {}),
+                        const SizedBox(width: 20),
+                        _SocialBtn(AppAssets.appleIcon   , onTap: () {}),
+                        const SizedBox(width: 20),
+                        _SocialBtn(AppAssets.facebookIcon, onTap: () {}),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
 
-                  _BottomPrompt(
-                    question: 'Zaten bir hesabın var mı? ',
-                    action  : 'Giriş Yap',
-                    onTap   : () => context.go(AppRouter.loginPath),
-                  ),
-                ],
+                    _BottomPrompt(
+                      question: 'Zaten bir hesabın var mı? ',
+                      action  : 'Giriş Yap',
+                      onTap   : () => context.go(AppRouter.loginPath),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  /* ------------ agreement row (FIXED) ------------ */
+  /* ------------ agreement row ------------ */
   Widget _buildAgreement() => Row(
     children: [
       Checkbox(
-        value       : _agree,
-        onChanged   : (v) => setState(() => _agree = v ?? false),
-        activeColor : AppColors.primaryRed,
-        checkColor  : AppColors.white,
-        side        : const BorderSide(color: AppColors.lightGrey),
+        value      : _agree,
+        onChanged  : (v) => setState(() => _agree = v ?? false),
+        activeColor: AppColors.primaryRed,
+        checkColor : AppColors.white,
+        side       : const BorderSide(color: AppColors.lightGrey),
       ),
       Expanded(
         child: RichText(
@@ -222,12 +251,14 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               const TextSpan(text: 'Kullanıcı sözleşmesini '),
               TextSpan(
-                  text: 'okudum ve kabul ediyorum.',
-                  style: const TextStyle(
-                    color: AppColors.primaryRed,
-                    decoration: TextDecoration.underline,
-                  ),
-                  recognizer: TapGestureRecognizer()..onTap = () {/* open doc */}),
+                text: 'okudum ve kabul ediyorum.',
+                style: const TextStyle(
+                  color: AppColors.primaryRed,
+                  decoration: TextDecoration.underline,
+                ),
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () {/* open doc */},
+              ),
             ],
           ),
         ),
@@ -245,10 +276,10 @@ class _SocialBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
+    onTap       : onTap,
     borderRadius: BorderRadius.circular(8),
     child: Container(
-      width: 56,
+      width : 56,
       height: 56,
       decoration: BoxDecoration(
         color: AppColors.inputBackground,
@@ -261,8 +292,12 @@ class _SocialBtn extends StatelessWidget {
 }
 
 class _BottomPrompt extends StatelessWidget {
-  const _BottomPrompt(
-      {required this.question, required this.action, required this.onTap});
+  const _BottomPrompt({
+    required this.question,
+    required this.action,
+    required this.onTap,
+  });
+
   final String question, action;
   final VoidCallback onTap;
 
@@ -277,7 +312,7 @@ class _BottomPrompt extends StatelessWidget {
       text: question,
       children: [
         TextSpan(
-          text: action,
+          text : action,
           style: const TextStyle(
               color: AppColors.primaryRed, fontWeight: FontWeight.bold),
           recognizer: TapGestureRecognizer()..onTap = onTap,

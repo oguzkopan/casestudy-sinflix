@@ -55,18 +55,27 @@ class _ProfilePageState extends State<ProfilePage>
     setState(() {});
   }
 
-  void _openSubscriptionSheet() => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => const FractionallySizedBox(
-      heightFactor: .75,
-      child: ClipRRect(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        child: SubscriptionPage(),
+  void _openSubscriptionSheet() {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,      // 👈  <-- THIS is the key line
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+
+      builder: (_) => const SafeArea(    // keeps the sheet above the home-indicator
+        top: false,                // (we only care about the bottom inset here)
+        child: FractionallySizedBox(
+          heightFactor: .90,       // up to 90 % of the screen – tweak as you like
+          child: ClipRRect(
+            borderRadius:
+            BorderRadius.vertical(top: Radius.circular(24)),
+            child: SubscriptionPage(),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
+
 
   /* ───────────────── UI ───────────────── */
   @override

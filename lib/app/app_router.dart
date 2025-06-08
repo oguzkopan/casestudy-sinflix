@@ -15,44 +15,55 @@ import 'package:sin_flix/features/shell/presentation/pages/shell_page.dart';
 import 'package:sin_flix/features/splash/presentation/pages/splash_page.dart';
 
 class AppRouter {
-  static const splashPath   = '/';
-  static const loginPath    = '/login';
-  static const registerPath = '/register';
-  static const addPhotoPath = '/add-photo';
+  /* ---------- route paths ---------- */
+  static const splashPath       = '/';
+  static const loginPath        = '/login';
+  static const registerPath     = '/register';
+  static const addPhotoPath     = '/add-photo';
   static const subscriptionPath = '/subscription';
 
   static const homePath    = '/home';
   static const profilePath = '/profile';
 
-  static final _rootNavKey = GlobalKey<NavigatorState>();
+  /* ---------- router ---------- */
+  static final _rootKey = GlobalKey<NavigatorState>();
 
   static final router = GoRouter(
-    navigatorKey: _rootNavKey,
-    initialLocation: splashPath,
+    navigatorKey     : _rootKey,
+    initialLocation  : splashPath,
     refreshListenable: GoRouterRefreshStream(getIt<AuthBloc>().stream),
 
+    /* ---------- central redirect logic ---------- */
     redirect: (context, state) {
       final auth = getIt<AuthBloc>().state;
-      getIt<LoggerService>().i(
-        'Redirect  ${state.matchedLocation}  ->  ${auth.runtimeType}',
-      );
+      getIt<LoggerService>()
+          .i('Redirect  ${state.matchedLocation}  ->  ${auth.runtimeType}');
 
-      if (auth is AuthInitial || auth is AuthLoading) {
+      /* ── 1. LAUNCH / WAITING ───────────────────────────────────────── */
+      if (auth is AuthInitial) {
+        // first launch → always stay on the splash logo
         return state.matchedLocation == splashPath ? null : splashPath;
       }
+      if (auth is AuthLoading) {
+        // let the current page render its own <Spinner/>
+        return null;
+      }
 
+      /* ── 2. SIGNED-IN & READY ─────────────────────────────────────── */
       if (auth is AuthAuthenticated) {
         if ({loginPath, registerPath, addPhotoPath, splashPath}
             .contains(state.matchedLocation)) {
           return homePath;
         }
-        return null;
+        return null; // already on an in-app page → stay
       }
 
+      /* ── 3. USER NEEDS TO UPLOAD AN AVATAR ────────────────────────── */
       if (auth is AuthNeedsPhotoUpload) {
         return state.matchedLocation == addPhotoPath ? null : addPhotoPath;
       }
 
+      /* ── 4. SIGN-OUT OR UNKNOWN ───────────────────────────────────── */
       if (state.matchedLocation != loginPath &&
           state.matchedLocation != registerPath) {
         return loginPath;
@@ -60,25 +71,28 @@ class AppRouter {
       return null;
     },
 
+    /* ---------- route table ---------- */
     routes: [
-      GoRoute(path: splashPath, builder: (_, __) => const SplashPage()),
-      GoRoute(path: loginPath, builder: (_, __) => const LoginPage()),
-      GoRoute(path: registerPath, builder: (_, __) => const RegisterPage()),
-      GoRoute(path: addPhotoPath, builder: (_, __) => const ProfilePhotoAddPage()),
-      GoRoute(path: subscriptionPath, builder: (_, __) => const SubscriptionPage()),
+      GoRoute(path: splashPath   , builder: (_, __) => const SplashPage()),
+      GoRoute(path: loginPath    , builder: (_, __) => const LoginPage()),
+      GoRoute(path: registerPath , builder: (_, __) => const RegisterPage()),
+      GoRoute(path: addPhotoPath , builder: (_, __) => const ProfilePhotoAddPage()),
+      GoRoute(path: subscriptionPath,
+          builder: (_, __) => const SubscriptionPage()),
 
+      /* main shell with bottom navigation -------------------------------- */
       ShellRoute(
         builder: (_, __, child) => ShellPage(child: child),
         routes: [
           GoRoute(
-            path: homePath,
-            name: 'home',
+            path       : homePath,
+            name       : 'home',
             pageBuilder: (_, __) =>
             const NoTransitionPage(child: HomePage()),
           ),
           GoRoute(
-            path: profilePath,
-            name: 'profile',
+            path       : profilePath,
+            name       : 'profile',
             pageBuilder: (_, __) =>
             const NoTransitionPage(child: ProfilePage()),
           ),
@@ -88,7 +102,8 @@ class AppRouter {
   );
 }
 
-/* notifies GoRouter when AuthBloc emits */
+/* ────────────────────────────────────────────────────────────── */
+/* helper that tells GoRouter to refresh when AuthBloc changes   */
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     _sub = stream.asBroadcastStream().listen((_) => notifyListeners());

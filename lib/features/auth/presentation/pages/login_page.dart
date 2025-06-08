@@ -67,93 +67,121 @@ class _LoginPageState extends State<LoginPage> {
           );
         },
 
-        builder: (_, __) => SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  SizedBox(height: h * .05),
-                  Image.asset(AppAssets.appLogo, height: 50),
-                  SizedBox(height: h * .05),
+        /* -------- 2 visual states: waiting | normal form -------- */
+        builder: (_, state) {
+          // 1️⃣  backend call in-flight
+          if (state is AuthLoading) return const SplashWaiting();
 
-                  Text('Merhabalar',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tempus varius ei vitae interdum id tortor elementum '
-                        'tristique eleifend at.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: h * .04),
+          // 2️⃣  show the form
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    SizedBox(height: h * .05),
+                    Image.asset(AppAssets.appLogo, height: 50),
+                    SizedBox(height: h * .05),
 
-                  /* E-posta -------------------------------------------------- */
-                  CustomTextField(
-                    controller  : _emailCtrl,
-                    hintText    : 'E-Posta',
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon  : const AssetIcon(AppAssets.mailIcon),
-                    validator   : (v) =>
-                    (v?.contains('@') ?? false)
-                        ? null
-                        : 'Geçerli e-posta girin',
-                  ),
-                  const SizedBox(height: 16),
+                    Text('Merhabalar',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tempus varius ei vitae interdum id tortor elementum '
+                          'tristique eleifend at.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: h * .04),
 
-                  /* Şifre --------------------------------------------------- */
-                  CustomTextField(
-                    controller : _passwordCtrl,
-                    hintText   : 'Şifre',
-                    obscureText: _obscure,
-                    prefixIcon : const AssetIcon(AppAssets.lockIcon),
-                    suffixIcon : GestureDetector(
-                      onTap : _togglePwd,
-                      child : AssetIcon(
-                        _obscure ? AppAssets.eyeClosed : AppAssets.eyeOpen,
-                        size: 18,
+                    /* E-posta ------------------------------------------------ */
+                    CustomTextField(
+                      controller  : _emailCtrl,
+                      hintText    : 'E-Posta',
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon  : const AssetIcon(AppAssets.mailIcon),
+                      validator   : (v) =>
+                      (v?.contains('@') ?? false)
+                          ? null
+                          : 'Geçerli e-posta girin',
+                    ),
+                    const SizedBox(height: 16),
+
+                    /* Şifre -------------------------------------------------- */
+                    CustomTextField(
+                      controller : _passwordCtrl,
+                      hintText   : 'Şifre',
+                      obscureText: _obscure,
+                      prefixIcon : const AssetIcon(AppAssets.lockIcon),
+                      suffixIcon : GestureDetector(
+                        onTap : _togglePwd,
+                        child : AssetIcon(
+                          _obscure ? AppAssets.eyeClosed : AppAssets.eyeOpen,
+                          size: 18,
+                        ),
+                      ),
+                      validator: (v) =>
+                      (v != null && v.length >= 6)
+                          ? null
+                          : 'En az 6 karakter',
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        child: const Text('Şifremi unuttum'),
+                        onPressed: () {/* TODO */},
                       ),
                     ),
-                    validator: (v) =>
-                    (v != null && v.length >= 6)
-                        ? null
-                        : 'En az 6 karakter',
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      child: const Text('Şifremi unuttum'),
-                      onPressed: () {/* TODO */},
+                    const SizedBox(height: 8),
+
+                    /* submit ------------------------------------------------ */
+                    CustomButton(
+                      text     : 'Giriş Yap',
+                      onPressed: _submit,
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 24),
 
-                  /* submit -------------------------------------------------- */
-                  CustomButton(
-                    text     : 'Giriş Yap',
-                    onPressed: _submit,
-                  ),
-                  const SizedBox(height: 24),
+                    const _SocialRow(),
+                    const SizedBox(height: 32),
 
-                  const _SocialRow(),
-                  const SizedBox(height: 32),
-
-                  _BottomPrompt(
-                    question: 'Bir hesabın yok mu? ',
-                    action  : 'Kayıt Ol',
-                    onTap   : () => context.push(AppRouter.registerPath),
-                  ),
-                ],
+                    _BottomPrompt(
+                      question: 'Bir hesabın yok mu? ',
+                      action  : 'Kayıt Ol',
+                      onTap   : () => context.push(AppRouter.registerPath),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
+
+/* ───────────────────────── Splash while waiting ───────────────────────── */
+class SplashWaiting extends StatelessWidget {
+  const SplashWaiting({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    color: AppColors.primaryBlack,
+    alignment: Alignment.center,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(AppAssets.appLogo, height: 60),
+        const SizedBox(height: 32),
+        const CircularProgressIndicator(color: AppColors.primaryRed),
+      ],
+    ),
+  );
+}
+
+/* ───────────── smaller helper widgets ───────────── */
 
 class _SocialRow extends StatelessWidget {
   const _SocialRow();
@@ -200,8 +228,8 @@ class _BottomPrompt extends StatelessWidget {
     required this.onTap,
   });
 
-  final String      question;
-  final String      action;
+  final String question;
+  final String action;
   final VoidCallback onTap;
 
   @override
